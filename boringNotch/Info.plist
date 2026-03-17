@@ -12,9 +12,10 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://TheBoredTeam.github.io/boring.notch/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>B1Y47t8C/v8ImurYA+9arEsuCrpxwJSviekiflMElbI=</string>
+	<string>https://raw.githubusercontent.com/Tide-Trends/boring.notch/main/updater/appcast.xml</string>
+	<!-- Generate your own EdDSA keypair for signed releases: run generate_keys from Sparkle -->
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>

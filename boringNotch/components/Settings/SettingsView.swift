@@ -25,109 +25,139 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selectedTab) {
-                NavigationLink(value: "General") {
-                    Label("General", systemImage: "gear")
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "waveform.path.ecg.rectangle")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.effectiveAccent.gradient)
+                    )
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("DynamicStage")
+                        .font(.headline)
+                    Text("Notch Control Center")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                NavigationLink(value: "Appearance") {
-                    Label("Appearance", systemImage: "eye")
-                }
-                NavigationLink(value: "Media") {
-                    Label("Media", systemImage: "play.laptopcomputer")
-                }
-                NavigationLink(value: "GuitarTabs") {
-                    Label("Guitar Tabs", systemImage: "guitars.fill")
-                }
-                NavigationLink(value: "Calendar") {
-                    Label("Calendar", systemImage: "calendar")
-                }
-                NavigationLink(value: "HUD") {
-                    Label("HUDs", systemImage: "dial.medium.fill")
-                }
-                NavigationLink(value: "Battery") {
-                    Label("Battery", systemImage: "battery.100.bolt")
-                }
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+
+            Divider()
+
+            NavigationSplitView {
+                List(selection: $selectedTab) {
+                    NavigationLink(value: "General") {
+                        Label("General", systemImage: "gear")
+                    }
+                    NavigationLink(value: "Appearance") {
+                        Label("Appearance", systemImage: "eye")
+                    }
+                    NavigationLink(value: "Media") {
+                        Label("Media", systemImage: "play.laptopcomputer")
+                    }
+                    NavigationLink(value: "GuitarTabs") {
+                        Label("Guitar Tabs", systemImage: "guitars.fill")
+                    }
+                    NavigationLink(value: "Calendar") {
+                        Label("Calendar", systemImage: "calendar")
+                    }
+                    NavigationLink(value: "Notifications") {
+                        Label("Notifications", systemImage: "bell.badge")
+                    }
+                    NavigationLink(value: "HUD") {
+                        Label("HUDs", systemImage: "dial.medium.fill")
+                    }
+                    NavigationLink(value: "Battery") {
+                        Label("Battery", systemImage: "battery.100.bolt")
+                    }
 //                NavigationLink(value: "Downloads") {
 //                    Label("Downloads", systemImage: "square.and.arrow.down")
 //                }
-                NavigationLink(value: "Shelf") {
-                    Label("Shelf", systemImage: "books.vertical")
-                }
-                NavigationLink(value: "Shortcuts") {
-                    Label("Shortcuts", systemImage: "keyboard")
-                }
-                // NavigationLink(value: "Extensions") {
-                //     Label("Extensions", systemImage: "puzzlepiece.extension")
-                // }
-                NavigationLink(value: "Advanced") {
-                    Label("Advanced", systemImage: "gearshape.2")
-                }
-                NavigationLink(value: "About") {
-                    Label("About", systemImage: "info.circle")
-                }
-            }
-            .listStyle(SidebarListStyle())
-            .tint(.effectiveAccent)
-            .toolbar(removing: .sidebarToggle)
-            .navigationSplitViewColumnWidth(200)
-        } detail: {
-            Group {
-                switch selectedTab {
-                case "General":
-                    GeneralSettings()
-                case "Appearance":
-                    Appearance()
-                case "Media":
-                    Media()
-                case "GuitarTabs":
-                    GuitarTabsSettings()
-                case "Calendar":
-                    CalendarSettings()
-                case "HUD":
-                    HUD()
-                case "Battery":
-                    Charge()
-                case "Shelf":
-                    Shelf()
-                case "Shortcuts":
-                    Shortcuts()
-                case "Extensions":
-                    GeneralSettings()
-                case "Advanced":
-                    Advanced()
-                case "About":
-                    if let controller = updaterController {
-                        About(updaterController: controller)
-                    } else {
-                        // Fallback with a default controller
-                        About(
-                            updaterController: SPUStandardUpdaterController(
-                                startingUpdater: false, updaterDelegate: nil,
-                                userDriverDelegate: nil))
+                    NavigationLink(value: "Shelf") {
+                        Label("Shelf", systemImage: "books.vertical")
                     }
-                default:
-                    GeneralSettings()
+                    NavigationLink(value: "Shortcuts") {
+                        Label("Shortcuts", systemImage: "keyboard")
+                    }
+                    // NavigationLink(value: "Extensions") {
+                    //     Label("Extensions", systemImage: "puzzlepiece.extension")
+                    // }
+                    NavigationLink(value: "Advanced") {
+                        Label("Advanced", systemImage: "gearshape.2")
+                    }
+                    NavigationLink(value: "About") {
+                        Label("About", systemImage: "info.circle")
+                    }
+                }
+                .listStyle(SidebarListStyle())
+                .tint(.effectiveAccent)
+                .toolbar(removing: .sidebarToggle)
+                .navigationSplitViewColumnWidth(220)
+            } detail: {
+                Group {
+                    switch selectedTab {
+                    case "General":
+                        GeneralSettings()
+                    case "Appearance":
+                        Appearance()
+                    case "Media":
+                        Media()
+                    case "GuitarTabs":
+                        GuitarTabsSettings()
+                    case "Calendar":
+                        CalendarSettings()
+                    case "Notifications":
+                        NotchNotificationsSettings()
+                    case "HUD":
+                        HUD()
+                    case "Battery":
+                        Charge()
+                    case "Shelf":
+                        Shelf()
+                    case "Shortcuts":
+                        Shortcuts()
+                    case "Extensions":
+                        GeneralSettings()
+                    case "Advanced":
+                        Advanced()
+                    case "About":
+                        if let controller = updaterController {
+                            About(updaterController: controller)
+                        } else {
+                            // Fallback with a default controller
+                            About(
+                                updaterController: SPUStandardUpdaterController(
+                                    startingUpdater: false, updaterDelegate: nil,
+                                    userDriverDelegate: nil))
+                        }
+                    default:
+                        GeneralSettings()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .navigationSplitViewStyle(.balanced)
+            .toolbar(removing: .sidebarToggle)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("")
+                        .frame(width: 0, height: 0)
+                        .accessibilityHidden(true)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .navigationSplitViewStyle(.balanced)
-        .toolbar(removing: .sidebarToggle)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text("")
-                    .frame(width: 0, height: 0)
-                    .accessibilityHidden(true)
+            .formStyle(.grouped)
+            .frame(width: 760, height: 620)
+            .background(Color(NSColor.windowBackgroundColor))
+            .tint(.effectiveAccent)
+            .id(accentColorUpdateTrigger)
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
+                accentColorUpdateTrigger = UUID()
             }
-        }
-        .formStyle(.grouped)
-        .frame(width: 700)
-        .background(Color(NSColor.windowBackgroundColor))
-        .tint(.effectiveAccent)
-        .id(accentColorUpdateTrigger)
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
-            accentColorUpdateTrigger = UUID()
         }
     }
 }
@@ -744,10 +774,16 @@ struct GuitarTabsSettings: View {
                         Text("Enable Ultimate Guitar integration")
                     }
                 }
+                Defaults.Toggle(key: .alwaysShowGuitarHeaderButton) {
+                    Text("Always show guitar button in notch header")
+                }
+                Defaults.Toggle(key: .allowGuitarDoubleClickPlay) {
+                    Text("Enable double-click to play open tab in Apple Music")
+                }
             } header: {
                 Text("Guitar Tabs")
             } footer: {
-                Text("When enabled, the Guitar Tabs button in your media control slots will search Ultimate Guitar for the currently playing song's tabs and chords.")
+                Text("The dedicated guitar button in the notch header is always available when notch is open. Single-click searches Ultimate Guitar. Double-click can play the open Ultimate Guitar tab in Apple Music.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -757,13 +793,13 @@ struct GuitarTabsSettings: View {
                     Label("How to use", systemImage: "questionmark.circle")
                         .font(.headline)
 
-                    Text("1. Add the Guitar Tabs button to your media control slots in the Media settings.")
+                    Text("1. Open the notch and click the orange guitar button in the header.")
                         .font(.callout)
                     Text("2. Play a song in Spotify, Apple Music, or any supported player.")
                         .font(.callout)
-                    Text("3. Open the notch and tap the guitar icon to search Ultimate Guitar for tabs.")
+                    Text("3. Single-click searches Ultimate Guitar for tabs.")
                         .font(.callout)
-                    Text("4. You can also add the Share button to copy the current track info to your clipboard.")
+                    Text("4. Double-click plays the currently open Ultimate Guitar tab in Apple Music.")
                         .font(.callout)
                 }
                 .padding(.vertical, 4)
@@ -790,6 +826,57 @@ struct GuitarTabsSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Guitar Tabs")
+    }
+}
+
+struct NotchNotificationsSettings: View {
+    @Default(.notchNotificationsEnabled) var notchNotificationsEnabled
+    @Default(.notchNotifyCalendar) var notchNotifyCalendar
+    @Default(.notchNotifyReminders) var notchNotifyReminders
+    @Default(.notchNotifyMessages) var notchNotifyMessages
+    @Default(.notchNotifyMail) var notchNotifyMail
+    @Default(.notchQuietMode) var notchQuietMode
+    @Default(.notchCompactNotificationCards) var notchCompactNotificationCards
+    @Default(.notchNotificationDuration) var notchNotificationDuration
+
+    var body: some View {
+        Form {
+            Section("Delivery") {
+                Defaults.Toggle(key: .notchNotificationsEnabled) {
+                    Text("Enable notch notifications")
+                }
+                Defaults.Toggle(key: .notchQuietMode) {
+                    Text("Quiet mode (suppress cards)")
+                }
+                Defaults.Toggle(key: .notchCompactNotificationCards) {
+                    Text("Compact notification cards")
+                }
+                HStack {
+                    Text("Card duration")
+                    Spacer()
+                    Text("\(notchNotificationDuration, specifier: "%.0f")s")
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $notchNotificationDuration, in: 2...10, step: 1)
+            }
+
+            Section("Sources") {
+                Defaults.Toggle(key: .notchNotifyCalendar) {
+                    Label("Calendar events", systemImage: "calendar")
+                }
+                Defaults.Toggle(key: .notchNotifyReminders) {
+                    Label("Reminders", systemImage: "checklist")
+                }
+                Defaults.Toggle(key: .notchNotifyMessages) {
+                    Label("Messages (best effort)", systemImage: "message.fill")
+                }
+                Defaults.Toggle(key: .notchNotifyMail) {
+                    Label("Mail (best effort)", systemImage: "envelope.fill")
+                }
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Notifications")
     }
 }
 
@@ -956,7 +1043,19 @@ struct About: View {
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
                     Button {
-                        if let url = URL(string: "https://github.com/TheBoredTeam/boring.notch") {
+                        if let url = URL(string: "https://github.com/Tide-Trends/boring.notch/releases") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: "arrow.down.circle")
+                                .font(.title2)
+                            Text("Download latest")
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    Button {
+                        if let url = URL(string: "https://github.com/Tide-Trends/boring.notch") {
                             NSWorkspace.shared.open(url)
                         }
                     } label: {
@@ -1825,6 +1924,16 @@ struct Shortcuts: View {
             }
             Section {
                 KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Search Tabs (Guitar):", name: .guitarSearchTabs)
+                KeyboardShortcuts.Recorder("Play from Open Tab (Apple Music):", name: .guitarPlayFromOpenTab)
+            } header: {
+                Text("Guitar Tabs")
+            } footer: {
+                Text("Single-click the guitar button searches Ultimate Guitar. Double-click plays the currently open Ultimate Guitar tab in Apple Music.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
             }
         }
         .accentColor(.effectiveAccent)

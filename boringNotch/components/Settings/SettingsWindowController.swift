@@ -10,6 +10,46 @@ import SwiftUI
 import Defaults
 import Sparkle
 
+@MainActor
+class SettingsPopoverController {
+    static let shared = SettingsPopoverController()
+    private let popover: NSPopover = NSPopover()
+    private var updaterController: SPUStandardUpdaterController?
+
+    private init() {
+        popover.behavior = .transient
+        popover.animates = true
+    }
+
+    func setUpdaterController(_ controller: SPUStandardUpdaterController) {
+        updaterController = controller
+    }
+
+    func toggle() {
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            show()
+        }
+    }
+
+    func show() {
+        let host = NSHostingController(rootView: SettingsView(updaterController: updaterController))
+        host.view.frame.size = NSSize(width: 760, height: 620)
+        popover.contentViewController = host
+
+        guard let targetWindow = NotchSpaceManager.shared.notchSpace.windows.first ?? NSApp.windows.first,
+              let contentView = targetWindow.contentView
+        else {
+            return
+        }
+
+        let anchorRect = NSRect(x: contentView.bounds.midX - 10, y: contentView.bounds.maxY - 4, width: 20, height: 4)
+        popover.show(relativeTo: anchorRect, of: contentView, preferredEdge: .maxY)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
 class SettingsWindowController: NSWindowController {
     static let shared = SettingsWindowController()
     private var updaterController: SPUStandardUpdaterController?
@@ -33,6 +73,7 @@ class SettingsWindowController: NSWindowController {
     
     func setUpdaterController(_ controller: SPUStandardUpdaterController) {
         self.updaterController = controller
+        SettingsPopoverController.shared.setUpdaterController(controller)
         // Recreate the content view with the proper updater controller
         setupWindow()
     }
@@ -40,7 +81,7 @@ class SettingsWindowController: NSWindowController {
     private func setupWindow() {
         guard let window = window else { return }
         
-        window.title = "Boring Notch Settings"
+        window.title = "DynamicStage Settings"
         window.titlebarAppearsTransparent = false
         window.titleVisibility = .visible
         window.toolbarStyle = .unified
@@ -55,7 +96,7 @@ class SettingsWindowController: NSWindowController {
         
         // Configure window to be a standard document-style window
         window.isRestorable = true
-        window.identifier = NSUserInterfaceItemIdentifier("BoringNotchSettingsWindow")
+        window.identifier = NSUserInterfaceItemIdentifier("DynamicStageSettingsWindow")
         
         // Create the SwiftUI content
         let settingsView = SettingsView(updaterController: updaterController)

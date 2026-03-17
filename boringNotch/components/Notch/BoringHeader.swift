@@ -12,6 +12,7 @@ struct BoringHeader: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var musicManager = MusicManager.shared
     @StateObject var tvm = ShelfStateViewModel.shared
     var body: some View {
         HStack(spacing: 0) {
@@ -42,6 +43,9 @@ struct BoringHeader: View {
                         OpenNotchHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon)
                             .transition(.scale(scale: 0.8).combined(with: .opacity))
                     } else {
+                        if Defaults[.enableGuitarTabs] && Defaults[.alwaysShowGuitarHeaderButton] {
+                            GuitarHeaderButton()
+                        }
                         if Defaults[.showMirror] {
                             Button(action: {
                                 vm.toggleCameraPreview()
@@ -60,7 +64,7 @@ struct BoringHeader: View {
                         }
                         if Defaults[.settingsIconInNotch] {
                             Button(action: {
-                                SettingsWindowController.shared.showWindow()
+                                SettingsPopoverController.shared.toggle()
                             }) {
                                 Capsule()
                                     .fill(.black)
@@ -106,6 +110,28 @@ struct BoringHeader: View {
         default:
             return false
         }
+    }
+}
+
+struct GuitarHeaderButton: View {
+    @ObservedObject var musicManager = MusicManager.shared
+
+    var body: some View {
+        Capsule()
+            .fill(.black)
+            .frame(width: 30, height: 30)
+            .overlay {
+                Image(systemName: "guitars.fill")
+                    .foregroundColor(.orange)
+                    .imageScale(.medium)
+            }
+            .contentShape(Capsule())
+            .onTapGesture(count: 2) {
+                musicManager.handleGuitarButtonDoubleClick()
+            }
+            .onTapGesture {
+                musicManager.handleGuitarButtonClick()
+            }
     }
 }
 

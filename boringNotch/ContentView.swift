@@ -65,6 +65,10 @@ struct ContentView: View {
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
+        } else if coordinator.expandingView.type == .notification && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.notchNotificationsEnabled]
+        {
+            chinWidth = Defaults[.notchCompactNotificationCards] ? 420 : 620
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
@@ -184,7 +188,7 @@ struct ContentView: View {
                     .sensoryFeedback(.alignment, trigger: haptics)
                     .contextMenu {
                         Button("Settings") {
-                            SettingsWindowController.shared.showWindow()
+                            SettingsPopoverController.shared.toggle()
                         }
                         .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
                         //                    Button("Edit") { // Doesnt work....
@@ -282,6 +286,13 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+                      } else if coordinator.expandingView.type == .notification && coordinator.expandingView.show
+                                    && vm.notchState == .closed
+                                    && Defaults[.notchNotificationsEnabled]
+                                    && !Defaults[.notchQuietMode]
+                                    && coordinator.currentNotchNotification != nil {
+                          NotchNotificationCard(item: coordinator.currentNotchNotification!)
+                              .frame(height: vm.effectiveClosedNotchHeight)
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
@@ -627,6 +638,37 @@ struct FullScreenDropDelegate: DropDelegate {
         return true
     }
 
+}
+
+struct NotchNotificationCard: View {
+    let item: NotchNotificationItem
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: item.icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Color.effectiveAccent))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.source)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(item.title)
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(1)
+                Text(item.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
 }
 
 struct GeneralDropTargetDelegate: DropDelegate {

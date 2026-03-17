@@ -43,7 +43,7 @@ struct BoringExtrasMenu : View {
     var github: some View {
         BoringLargeButtons(
             action: {
-                if let url = URL(string: "https://github.com/TheBoredTeam/boring.notch") {
+                if let url = URL(string: "https://github.com/Tide-Trends/boring.notch") {
                     NSWorkspace.shared.open(url)
                 }
             },
@@ -54,7 +54,7 @@ struct BoringExtrasMenu : View {
     
     var settings: some View {
         Button(action: {
-            SettingsWindowController.shared.showWindow()
+            SettingsPopoverController.shared.toggle()
         }) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12.0).fill(.black).frame(width: 70, height: 70)

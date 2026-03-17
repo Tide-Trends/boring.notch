@@ -13,7 +13,7 @@ import Sparkle
 import SwiftUI
 
 @main
-struct DynamicNotchApp: App {
+struct DynamicStageApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Default(.menubarIcon) var showMenuBarIcon
     @Environment(\.openWindow) var openWindow
@@ -24,19 +24,19 @@ struct DynamicNotchApp: App {
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
-        // Initialize the settings window controller with the updater controller
+        // Initialize settings controllers with updater
         SettingsWindowController.shared.setUpdaterController(updaterController)
     }
 
     var body: some Scene {
-        MenuBarExtra("boring.notch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("DynamicStage", systemImage: "waveform.path.ecg.rectangle", isInserted: $showMenuBarIcon) {
             Button("Settings") {
-                SettingsWindowController.shared.showWindow()
+                SettingsPopoverController.shared.toggle()
             }
             .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
             CheckForUpdatesView(updater: updaterController.updater)
             Divider()
-            Button("Restart Boring Notch") {
+            Button("Restart DynamicStage") {
                 ApplicationRelauncher.restart()
             }
             Button("Quit", role: .destructive) {
@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private let notificationIngestion = NotchNotificationIngestionManager.shared
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -81,6 +82,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             screenUnlockedObserver = nil
         }
         MusicManager.shared.destroy()
+        notificationIngestion.stop()
         cleanupDragDetectors()
         cleanupWindows()
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
@@ -408,6 +410,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        KeyboardShortcuts.onKeyDown(for: .guitarSearchTabs) {
+            MusicManager.shared.searchGuitarTabs()
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .guitarPlayFromOpenTab) {
+            MusicManager.shared.playFromOpenUltimateGuitarTabInAppleMusic()
+        }
+
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
             let window = createBoringNotchWindow(
@@ -419,6 +429,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setupDragDetectors()
+        notificationIngestion.start()
 
         if coordinator.firstLaunch {
             DispatchQueue.main.async {
@@ -579,7 +590,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     },
                     onOpenSettings: {
                         window.close()
-                        SettingsWindowController.shared.showWindow()
+                        SettingsPopoverController.shared.toggle()
                     }
                 ))
             window.isRestorable = false
@@ -592,6 +603,164 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
         onboardingWindowController?.window?.orderFrontRegardless()
+    }
+}
+
+@MainActor
+final class NotchNotificationIngestionManager {
+    static let shared = NotchNotificationIngestionManager()
+    private var timer: Timer?
+    private var lastCalendarEventID: String?
+    private var lastReminderCount: Int = 0
+    private var lastUnreadMessages: Int = 0
+    private var lastUnreadMail: Int = 0
+
+    private init() {}
+
+    func start() {
+        stop()
+        Task { @MainActor in
+            await bootstrapSnapshots()
+        }
+        timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { _ in
+            Task { @MainActor in
+                await self.poll()
+            }
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func bootstrapSnapshots() async {
+        let calendarManager = CalendarManager.shared
+        await calendarManager.checkCalendarAuthorization()
+        await calendarManager.checkReminderAuthorization()
+        if let nextEvent = calendarManager.events.first(where: { !$0.type.isReminder && $0.end > Date() }) {
+            lastCalendarEventID = nextEvent.id
+        }
+        lastReminderCount = calendarManager.events.filter { $0.type.isReminder }.count
+        lastUnreadMessages = await unreadMessagesCount()
+        lastUnreadMail = await unreadMailCount()
+    }
+
+    private func poll() async {
+        guard Defaults[.notchNotificationsEnabled], !Defaults[.notchQuietMode] else { return }
+
+        let calendarManager = CalendarManager.shared
+        await calendarManager.updateCurrentDate(Date())
+
+        if Defaults[.notchNotifyCalendar],
+           let nextEvent = calendarManager.events.first(where: { !$0.type.isReminder && $0.end > Date() }),
+           nextEvent.id != lastCalendarEventID {
+            lastCalendarEventID = nextEvent.id
+            BoringViewCoordinator.shared.showNotchNotification(
+                .init(
+                    source: "Calendar",
+                    title: nextEvent.title,
+                    subtitle: nextEvent.location ?? "Upcoming event",
+                    icon: "calendar"
+                ),
+                duration: Defaults[.notchNotificationDuration]
+            )
+        }
+
+        if Defaults[.notchNotifyReminders] {
+            let currentReminderCount = calendarManager.events.filter { $0.type.isReminder }.count
+            if currentReminderCount > lastReminderCount {
+                BoringViewCoordinator.shared.showNotchNotification(
+                    .init(
+                        source: "Reminders",
+                        title: "You have \(currentReminderCount) reminders",
+                        subtitle: "New reminder activity detected",
+                        icon: "checklist"
+                    ),
+                    duration: Defaults[.notchNotificationDuration]
+                )
+            }
+            lastReminderCount = currentReminderCount
+        }
+
+        if Defaults[.notchNotifyMessages] {
+            let unreadMessages = await unreadMessagesCount()
+            if unreadMessages > lastUnreadMessages {
+                BoringViewCoordinator.shared.showNotchNotification(
+                    .init(
+                        source: "Messages",
+                        title: "\(unreadMessages) unread messages",
+                        subtitle: "Open Messages to view details",
+                        icon: "message.fill"
+                    ),
+                    duration: Defaults[.notchNotificationDuration]
+                )
+            }
+            lastUnreadMessages = unreadMessages
+        }
+
+        if Defaults[.notchNotifyMail] {
+            let unreadMail = await unreadMailCount()
+            if unreadMail > lastUnreadMail {
+                BoringViewCoordinator.shared.showNotchNotification(
+                    .init(
+                        source: "Mail",
+                        title: "\(unreadMail) unread emails",
+                        subtitle: "Open Mail to view new messages",
+                        icon: "envelope.fill"
+                    ),
+                    duration: Defaults[.notchNotificationDuration]
+                )
+            }
+            lastUnreadMail = unreadMail
+        }
+    }
+
+    private func unreadMessagesCount() async -> Int {
+        let script = """
+        tell application "Messages"
+            if it is running then
+                try
+                    set unreadCount to 0
+                    repeat with c in chats
+                        if unread count of c > 0 then
+                            set unreadCount to unreadCount + (unread count of c)
+                        end if
+                    end repeat
+                    return unreadCount
+                on error
+                    return 0
+                end try
+            else
+                return 0
+            end if
+        end tell
+        """
+        if let result = try? await AppleScriptHelper.execute(script) {
+            return Int(result.int32Value)
+        }
+        return 0
+    }
+
+    private func unreadMailCount() async -> Int {
+        let script = """
+        tell application "Mail"
+            if it is running then
+                try
+                    set unreadCount to unread count of inbox
+                    return unreadCount
+                on error
+                    return 0
+                end try
+            else
+                return 0
+            end if
+        end tell
+        """
+        if let result = try? await AppleScriptHelper.execute(script) {
+            return Int(result.int32Value)
+        }
+        return 0
     }
 }
 

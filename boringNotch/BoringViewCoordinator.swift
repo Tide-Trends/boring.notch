@@ -18,6 +18,15 @@ enum SneakContentType {
     case mic
     case battery
     case download
+    case notification
+}
+
+struct NotchNotificationItem: Identifiable, Equatable {
+    let id = UUID()
+    let source: String
+    let title: String
+    let subtitle: String
+    let icon: String
 }
 
 struct sneakPeek {
@@ -98,6 +107,8 @@ class BoringViewCoordinator: ObservableObject {
     @Published var selectedScreenUUID: String = NSScreen.main?.displayUUID ?? ""
 
     @Published var optionKeyPressed: Bool = true
+    @Published var currentNotchNotification: NotchNotificationItem?
+    private var notificationHideTask: Task<Void, Never>?
     private var accessibilityObserver: Any?
     private var hudReplacementCancellable: AnyCancellable?
 
@@ -296,5 +307,20 @@ class BoringViewCoordinator: ObservableObject {
     
     func showEmpty() {
         currentView = .home
+    }
+
+    func showNotchNotification(_ item: NotchNotificationItem, duration: TimeInterval = 4.0) {
+        currentNotchNotification = item
+        toggleExpandingView(status: true, type: .notification)
+
+        notificationHideTask?.cancel()
+        notificationHideTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(duration))
+            guard let self, !Task.isCancelled else { return }
+            await MainActor.run {
+                self.currentNotchNotification = nil
+                self.toggleExpandingView(status: false, type: .notification)
+            }
+        }
     }
 }

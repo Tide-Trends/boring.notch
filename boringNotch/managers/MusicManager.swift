@@ -67,6 +67,7 @@ class MusicManager: ObservableObject {
 
     @Published var isTransitioning: Bool = false
     private var transitionWorkItem: DispatchWorkItem?
+    private var pendingGuitarSingleClickWorkItem: DispatchWorkItem?
 
     // MARK: - Initialization
     init() {
@@ -695,6 +696,25 @@ class MusicManager: ObservableObject {
     
     // MARK: - Ultimate Guitar Integration
 
+    func handleGuitarButtonClick() {
+        pendingGuitarSingleClickWorkItem?.cancel()
+        let action = DispatchWorkItem { [weak self] in
+            self?.searchGuitarTabs()
+        }
+        pendingGuitarSingleClickWorkItem = action
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
+    }
+
+    func handleGuitarButtonDoubleClick() {
+        guard Defaults[.allowGuitarDoubleClickPlay] else {
+            searchGuitarTabs()
+            return
+        }
+        pendingGuitarSingleClickWorkItem?.cancel()
+        pendingGuitarSingleClickWorkItem = nil
+        playFromOpenUltimateGuitarTabInAppleMusic()
+    }
+
     func searchGuitarTabs() {
         let title = songTitle
         let artist = artistName
@@ -712,6 +732,34 @@ class MusicManager: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
+    func playFromOpenUltimateGuitarTabInAppleMusic() {
+        Task { @MainActor in
+            guard let tabURL = await currentBrowserTabURL(),
+                  let track = parseUltimateGuitarTrack(from: tabURL)
+            else {
+                return
+            }
+
+            let escapedQuery = track
+                .replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "\\", with: "\\\\")
+
+            let script = """
+            tell application "Music"
+                if it is running then
+                    set matchingTracks to search playlist "Library" of source "Library" for "\(escapedQuery)"
+                    if (count of matchingTracks) > 0 then
+                        play item 1 of matchingTracks
+                        return "library"
+                    end if
+                end if
+            end tell
+            return "not_found"
+            """
+            _ = try? await AppleScriptHelper.execute(script)
+        }
+    }
+
     func shareCurrentTrack() {
         let title = songTitle
         let artist = artistName
@@ -721,6 +769,81 @@ class MusicManager: ObservableObject {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+    }
+
+    @MainActor
+    private func currentBrowserTabURL() async -> URL? {
+        let scripts: [String] = [
+            """
+            tell application "Safari"
+                if it is running and (count of windows) > 0 then
+                    return URL of current tab of front window
+                end if
+            end tell
+            return ""
+            """,
+            """
+            tell application "Google Chrome"
+                if it is running and (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """,
+            """
+            tell application "Arc"
+                if it is running and (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """,
+            """
+            tell application "Brave Browser"
+                if it is running and (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """,
+            """
+            tell application "Microsoft Edge"
+                if it is running and (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """
+        ]
+
+        for script in scripts {
+            if let result = try? await AppleScriptHelper.execute(script),
+               let rawURL = result.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !rawURL.isEmpty,
+               let url = URL(string: rawURL) {
+                return url
+            }
+        }
+        return nil
+    }
+
+    private func parseUltimateGuitarTrack(from url: URL) -> String? {
+        guard let host = url.host?.lowercased(), host.contains("ultimate-guitar.com") else {
+            return nil
+        }
+        let pathComponents = url.path.split(separator: "/").map(String.init)
+        guard pathComponents.count >= 3, pathComponents[0] == "tab" else {
+            return nil
+        }
+
+        let artist = pathComponents[1].replacingOccurrences(of: "-", with: " ").capitalized
+        let titleRaw = pathComponents[2].split(separator: "-").map(String.init)
+        let title = titleRaw
+            .filter { !$0.allSatisfy(\.isNumber) }
+            .joined(separator: " ")
+            .capitalized
+        let track = "\(title) \(artist)".trimmingCharacters(in: .whitespacesAndNewlines)
+        return track.isEmpty ? nil : track
     }
 
     func syncVolumeFromActiveApp() async {

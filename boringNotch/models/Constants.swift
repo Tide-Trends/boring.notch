@@ -140,6 +140,18 @@ extension Defaults.Keys {
     
     // MARK: Guitar Tabs
     static let enableGuitarTabs = Key<Bool>("enableGuitarTabs", default: true)
+    static let alwaysShowGuitarHeaderButton = Key<Bool>("alwaysShowGuitarHeaderButton", default: true)
+    static let allowGuitarDoubleClickPlay = Key<Bool>("allowGuitarDoubleClickPlay", default: true)
+
+    // MARK: Notch Notifications
+    static let notchNotificationsEnabled = Key<Bool>("notchNotificationsEnabled", default: true)
+    static let notchNotifyCalendar = Key<Bool>("notchNotifyCalendar", default: true)
+    static let notchNotifyReminders = Key<Bool>("notchNotifyReminders", default: true)
+    static let notchNotifyMessages = Key<Bool>("notchNotifyMessages", default: true)
+    static let notchNotifyMail = Key<Bool>("notchNotifyMail", default: true)
+    static let notchNotificationDuration = Key<Double>("notchNotificationDuration", default: 4)
+    static let notchCompactNotificationCards = Key<Bool>("notchCompactNotificationCards", default: false)
+    static let notchQuietMode = Key<Bool>("notchQuietMode", default: false)
 
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
