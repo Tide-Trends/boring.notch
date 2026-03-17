@@ -138,6 +138,9 @@ extension Defaults.Keys {
         default: MusicControlButton.defaultLayout.count
     )
     
+    // MARK: Guitar Tabs
+    static let enableGuitarTabs = Key<Bool>("enableGuitarTabs", default: true)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)

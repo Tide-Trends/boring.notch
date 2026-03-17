@@ -272,6 +272,10 @@ struct MusicControlsView: View {
             HoverButton(icon: "goforward.15", scale: .medium) {
                 MusicManager.shared.skip(seconds: 15)
             }
+        case .guitarTabs:
+            GuitarTabsButton()
+        case .shareTrack:
+            ShareTrackButton()
         case .none:
             Color.clear.frame(height: 1)
         }
@@ -463,6 +467,80 @@ struct NotchHomeView: View {
         }
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
+    }
+}
+
+// MARK: - Guitar Tabs Button
+
+struct GuitarTabsButton: View {
+    @ObservedObject var musicManager = MusicManager.shared
+    @State private var showConfirmation = false
+
+    var body: some View {
+        HoverButton(icon: "guitars.fill", iconColor: iconColor, scale: .medium) {
+            musicManager.searchGuitarTabs()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showConfirmation = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showConfirmation = false
+                }
+            }
+        }
+        .disabled(!hasTrack)
+        .opacity(hasTrack ? 1 : 0.35)
+        .overlay(alignment: .top) {
+            if showConfirmation {
+                Text("Searching tabs…")
+                    .font(.caption2)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.ultraThinMaterial))
+                    .offset(y: -20)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+    }
+
+    private var hasTrack: Bool {
+        !musicManager.songTitle.isEmpty && musicManager.songTitle != "I'm Handsome"
+    }
+
+    private var iconColor: Color {
+        showConfirmation ? .orange : .primary
+    }
+}
+
+// MARK: - Share Track Button
+
+struct ShareTrackButton: View {
+    @ObservedObject var musicManager = MusicManager.shared
+    @State private var copied = false
+
+    var body: some View {
+        HoverButton(
+            icon: copied ? "checkmark" : "square.and.arrow.up",
+            iconColor: copied ? .green : .primary,
+            scale: .medium
+        ) {
+            musicManager.shareCurrentTrack()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                copied = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    copied = false
+                }
+            }
+        }
+        .disabled(!hasTrack)
+        .opacity(hasTrack ? 1 : 0.35)
+    }
+
+    private var hasTrack: Bool {
+        !musicManager.songTitle.isEmpty && musicManager.songTitle != "I'm Handsome"
     }
 }
 

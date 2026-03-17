@@ -17,6 +17,8 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
     case favorite
     case goBackward
     case goForward
+    case guitarTabs
+    case shareTrack
     case none
 
     var id: String { rawValue }
@@ -30,7 +32,7 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
     ]
 
     static let minSlotCount: Int = 3
-    static let maxSlotCount: Int = 5
+    static let maxSlotCount: Int = 7
 
     static let pickerOptions: [MusicControlButton] = [
         .shuffle,
@@ -41,7 +43,9 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
         .favorite,
         .volume,
         .goBackward,
-        .goForward
+        .goForward,
+        .guitarTabs,
+        .shareTrack
     ]
 
     var label: String {
@@ -64,6 +68,10 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
             return "Backward 15s"
         case .goForward:
             return "Forward 15s"
+        case .guitarTabs:
+            return "Guitar Tabs"
+        case .shareTrack:
+            return "Share Track"
         case .none:
             return "Empty slot"
         }
@@ -89,6 +97,10 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
             return "gobackward.15"
         case .goForward:
             return "goforward.15"
+        case .guitarTabs:
+            return "guitars.fill"
+        case .shareTrack:
+            return "square.and.arrow.up"
         case .none:
             return ""
         }

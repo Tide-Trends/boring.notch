@@ -693,6 +693,36 @@ class MusicManager: ObservableObject {
     }
     
     
+    // MARK: - Ultimate Guitar Integration
+
+    func searchGuitarTabs() {
+        let title = songTitle
+        let artist = artistName
+        guard !title.isEmpty, title != "I'm Handsome" else { return }
+
+        let query = [title, artist]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://www.ultimate-guitar.com/search.php?search_type=title&value=\(encoded)")
+        else { return }
+
+        NSWorkspace.shared.open(url)
+    }
+
+    func shareCurrentTrack() {
+        let title = songTitle
+        let artist = artistName
+        guard !title.isEmpty, title != "I'm Handsome" else { return }
+
+        let text = "\(title) - \(artist)"
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
     func syncVolumeFromActiveApp() async {
         // Check if bundle identifier is valid and if the app is actually running
         guard let bundleID = bundleIdentifier, !bundleID.isEmpty,

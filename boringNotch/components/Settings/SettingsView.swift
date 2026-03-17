@@ -36,6 +36,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Media") {
                     Label("Media", systemImage: "play.laptopcomputer")
                 }
+                NavigationLink(value: "GuitarTabs") {
+                    Label("Guitar Tabs", systemImage: "guitars.fill")
+                }
                 NavigationLink(value: "Calendar") {
                     Label("Calendar", systemImage: "calendar")
                 }
@@ -77,6 +80,8 @@ struct SettingsView: View {
                     Appearance()
                 case "Media":
                     Media()
+                case "GuitarTabs":
+                    GuitarTabsSettings()
                 case "Calendar":
                     CalendarSettings()
                 case "HUD":
@@ -688,7 +693,26 @@ struct Media: View {
             } header: {
                 Text("Media controls")
             }  footer: {
-                Text("Customize which controls appear in the music player. Volume expands when active.")
+                Text("Customize which controls appear in the music player. Add Guitar Tabs or Share buttons from the slot picker. Volume expands when active.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Defaults.Toggle(key: .enableGuitarTabs) {
+                    HStack {
+                        Image(systemName: "guitars.fill")
+                            .foregroundColor(.orange)
+                        Text("Enable Ultimate Guitar integration")
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Guitar Tabs")
+                    customBadge(text: "New")
+                }
+            } footer: {
+                Text("Search Ultimate Guitar for tabs and chords of the currently playing song. Add the Guitar Tabs button to your media control slots above.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -704,6 +728,68 @@ struct Media: View {
         } else {
             return MediaControllerType.allCases
         }
+    }
+}
+
+struct GuitarTabsSettings: View {
+    @Default(.enableGuitarTabs) var enableGuitarTabs
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .enableGuitarTabs) {
+                    HStack {
+                        Image(systemName: "guitars.fill")
+                            .foregroundColor(.orange)
+                        Text("Enable Ultimate Guitar integration")
+                    }
+                }
+            } header: {
+                Text("Guitar Tabs")
+            } footer: {
+                Text("When enabled, the Guitar Tabs button in your media control slots will search Ultimate Guitar for the currently playing song's tabs and chords.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("How to use", systemImage: "questionmark.circle")
+                        .font(.headline)
+
+                    Text("1. Add the Guitar Tabs button to your media control slots in the Media settings.")
+                        .font(.callout)
+                    Text("2. Play a song in Spotify, Apple Music, or any supported player.")
+                        .font(.callout)
+                    Text("3. Open the notch and tap the guitar icon to search Ultimate Guitar for tabs.")
+                        .font(.callout)
+                    Text("4. You can also add the Share button to copy the current track info to your clipboard.")
+                        .font(.callout)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Quick Start")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Supported Players")
+                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 12) {
+                        Label("Apple Music", systemImage: "music.note")
+                        Label("Spotify", systemImage: "waveform")
+                        Label("YouTube Music", systemImage: "play.rectangle.fill")
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Compatibility")
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Guitar Tabs")
     }
 }
 
